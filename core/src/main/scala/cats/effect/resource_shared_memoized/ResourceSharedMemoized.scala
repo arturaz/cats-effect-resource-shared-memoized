@@ -14,7 +14,8 @@ object ResourceSharedMemoized {
       case None =>
         // Allocate the resource.
         (for {
-          (a, cleanup) <- resource.allocated
+          tpl <- resource.allocated
+          (a, cleanup) = tpl
         } yield {
           val data = ResourceSharedMemoized.Allocated.make(value = a, cleanup = cleanup)
           (data.some, a)

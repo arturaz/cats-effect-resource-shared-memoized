@@ -21,7 +21,13 @@ ThisBuild / scalaVersion := Scala213 // the default Scala
 
 lazy val root = tlCrossRootProject.aggregate(core)
 
-lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+lazy val core = crossProject(
+  JVMPlatform,
+  JSPlatform
+  // Seems we can't build native for now, as cats-core is only available for scala-native 0.5, but cats-effect is only
+  // available for scala-native 0.4 for now.
+//  NativePlatform
+)
   .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(
