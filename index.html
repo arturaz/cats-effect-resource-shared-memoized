@@ -125,14 +125,14 @@
 </span><span class="comment">// memoizedResource: Resource[IO, State] = Eval(
 //   fa = FlatMap(
 //     ioe = Delay(
-//       thunk = cats.effect.kernel.SyncRef$$Lambda$11961/0x00000001032e3840@6302201d,
+//       thunk = cats.effect.kernel.SyncRef$$Lambda$12117/0x000000010332d840@59b0c268,
 //       event = cats.effect.tracing.TracingEvent$StackTrace
 //     ),
-//     f = cats.effect.kernel.GenConcurrent$$Lambda$11962/0x00000001032e4040@562cc568,
+//     f = cats.effect.kernel.GenConcurrent$$Lambda$12118/0x000000010332e040@7f5de796,
 //     event = cats.effect.tracing.TracingEvent$StackTrace
 //   )
 // )
-// memoizedResourceState: Ref[IO, State] = cats.effect.kernel.SyncRef@7a5e82a6
+// memoizedResourceState: Ref[IO, State] = cats.effect.kernel.SyncRef@61b9fbc2
 </span><span>
 </span><span class="identifier">memoizedResource</span><span>.</span><span class="identifier">use</span><span> { </span><span class="identifier">value</span><span> =&gt;
   </span><span class="identifier">memoizedResourceState</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">state</span><span> =&gt; </span><span class="string-literal">s&quot;</span><span class="escape-sequence">\n</span><span class="string-literal">state: </span><span class="substitution">$state</span><span class="escape-sequence">\n</span><span class="string-literal">value: </span><span class="substitution">$value</span><span class="string-literal">&quot;</span><span>)
@@ -178,9 +178,9 @@
   </span><span class="identifier">resource</span><span> &lt;- </span><span class="type-name">ResourceSharedMemoized</span><span>.</span><span class="identifier">memoize</span><span>(</span><span class="identifier">resource</span><span>)
 } </span><span class="keyword">yield</span><span> (</span><span class="identifier">resource</span><span>, </span><span class="identifier">state</span><span>)).</span><span class="identifier">unsafeRunSync</span><span>()
 </span><span class="comment">// cachedResource: Resource[[A]IO[A], State] = Allocate(
-//   resource = cats.effect.kernel.Resource$$$Lambda$11945/0x00000001032b5840@1b3e632b
+//   resource = cats.effect.kernel.Resource$$$Lambda$12218/0x0000000103380040@338c9d24
 // )
-// state: Ref[IO, State] = cats.effect.kernel.SyncRef@2bbd45de
+// state: Ref[IO, State] = cats.effect.kernel.SyncRef@35b6cd57
 </span><span>
 </span><span class="identifier">cachedResource</span><span>.</span><span class="identifier">use</span><span> { </span><span class="identifier">value</span><span> =&gt;
   </span><span class="identifier">state</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">state</span><span> =&gt; </span><span class="string-literal">s&quot;</span><span class="escape-sequence">\n</span><span class="string-literal">state: </span><span class="substitution">$state</span><span class="escape-sequence">\n</span><span class="string-literal">value: </span><span class="substitution">$value</span><span class="string-literal">&quot;</span><span>)
@@ -224,7 +224,7 @@
         <p>The code from <code>main</code> branch can be obtained with:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">resolvers</span><span> ++= </span><span class="type-name">Resolver</span><span>.</span><span class="identifier">sonatypeOssRepos</span><span>(</span><span class="string-literal">&quot;snapshots&quot;</span><span>)
 </span><span class="identifier">libraryDependencies</span><span> += 
-  </span><span class="string-literal">&quot;io.github.arturaz&quot;</span><span> %% </span><span class="string-literal">&quot;cats-effect-resource-shared-memoized&quot;</span><span> % </span><span class="string-literal">&quot;0.1-ab53c6a-SNAPSHOT&quot;</span></code></pre>
+  </span><span class="string-literal">&quot;io.github.arturaz&quot;</span><span> %% </span><span class="string-literal">&quot;cats-effect-resource-shared-memoized&quot;</span><span> % </span><span class="string-literal">&quot;0.1.0-1-47e0388-SNAPSHOT&quot;</span></code></pre>
         <p>For <a href="https://mill-build.com">mill</a>:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span>  </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">repositoriesTask</span><span> = </span><span class="type-name">T</span><span>.</span><span class="identifier">task</span><span> {
     </span><span class="keyword">super</span><span>.</span><span class="identifier">repositoriesTask</span><span>() ++ </span><span class="type-name">Seq</span><span>(
@@ -233,7 +233,7 @@
   }
 
 </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">ivyDeps</span><span> = </span><span class="type-name">Agg</span><span>(
-  </span><span class="string-literal">ivy&quot;io.github.arturaz::cats-effect-resource-shared-memoized:0.1-ab53c6a-SNAPSHOT&quot;</span><span>
+  </span><span class="string-literal">ivy&quot;io.github.arturaz::cats-effect-resource-shared-memoized:0.1.0-1-47e0388-SNAPSHOT&quot;</span><span>
 )</span></code></pre>
         
         <h2 id="credits" class="section"><a class="anchor-link left" href="#credits"><i class="icofont-laika link">&#xef71;</i></a>Credits</h2>
