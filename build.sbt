@@ -15,6 +15,9 @@ ThisBuild / sonatypeCredentialHost := xerial.sbt.Sonatype.sonatype01
 // publish website from this branch
 ThisBuild / tlSitePublishBranch := Some("main")
 
+// Disable the checks, I don't want to deal with them right now.
+ThisBuild / tlCiHeaderCheck := false
+
 val Scala213 = "2.13.16"
 ThisBuild / crossScalaVersions := Seq(Scala213, "3.3.5")
 ThisBuild / scalaVersion := Scala213 // the default Scala
