@@ -1,6 +1,7 @@
 package cats.effect.resource_shared_memoized
 
 import cats.effect.Concurrent
+import cats.effect.Poll
 import cats.effect.Resource
 import cats.effect.std.AtomicCell
 import cats.syntax.all._
@@ -11,11 +12,17 @@ object ResourceSharedMemoized {
     * times. It keeps track of how many users it has and releases the [[Resource]] when there are no more users.
     */
   def memoize[F[_]: Concurrent, A](resource: Resource[F, A]): F[Resource[F, A]] = {
-    def acquire(cell: AtomicCell[F, Option[Allocated[F, A]]]) = cell.evalModify {
+    def acquire(poll: Poll[F], cell: AtomicCell[F, Option[Allocated[F, A]]]) = cell.evalModify {
       case None =>
         // Allocate the resource.
         (for {
-          tpl <- resource.allocated
+          /** Use `poll` to allow the resource allocation to be cancellable, for example in case `resource` is trying to
+            * get a lock and can't acquire it.
+            *
+            * @see
+            *   [[cats.effect.MonadCancel]]
+            */
+          tpl <- poll(resource.allocated)
           (a, cleanup) = tpl
         } yield {
           val data = ResourceSharedMemoized.Allocated.make(value = a, cleanup = cleanup)
@@ -41,7 +48,7 @@ object ResourceSharedMemoized {
 
     for {
       cell <- AtomicCell[F].of(Option.empty[Allocated[F, A]])
-    } yield Resource.make[F, A](acquire(cell))(cleanup(cell, _))
+    } yield Resource.makeFull[F, A](acquire(_, cell))(cleanup(cell, _))
   }
 
   /** An allocated value. */
