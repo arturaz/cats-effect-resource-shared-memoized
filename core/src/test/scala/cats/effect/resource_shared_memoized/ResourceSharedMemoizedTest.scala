@@ -16,29 +16,32 @@
 
 package cats.effect.resource_shared_memoized
 
-import cats.effect.{IO, Resource}
+import cats.effect.IO
+import cats.effect.Resource
 import munit.CatsEffectSuite
 
 import java.util.concurrent.atomic.AtomicInteger
 
 class ResourceSharedMemoizedTest extends CatsEffectSuite {
-  class State {
-    val allocations = new AtomicInteger(0)
-    val releases = new AtomicInteger(0)
-
-    val resource: Resource[IO, Unit] =
-      Resource
-        .make(IO(allocations.addAndGet(1)).void)(_ => IO(releases.addAndGet(1)).void)
-        .memoizeShared
-        .unsafeRunSync()
+  case class State(allocations: AtomicInteger, releases: AtomicInteger, resource: Resource[IO, Unit])
+  object State {
+    def make: IO[State] = for {
+      allocations <- IO(new AtomicInteger(0))
+      releases <- IO(new AtomicInteger(0))
+      resource <-
+        Resource
+          .make(IO(allocations.addAndGet(1)).void)(_ => IO(releases.addAndGet(1)).void)
+          .memoizeShared
+    } yield apply(allocations, releases, resource)
   }
 
-  val fixture = FunFixture[State](
-    setup = { _ => new State },
+  val fixture = FunFixture.async[State](
+    setup = { _ => State.make.unsafeToFuture() },
     teardown = { state =>
       val allocations = state.allocations.get()
       val releases = state.releases.get()
       assert(allocations == releases, s"allocations=$allocations != releases=$releases")
+      IO.unit.unsafeToFuture()
     }
   )
 

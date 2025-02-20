@@ -1,8 +1,9 @@
 package cats.effect.resource_shared_memoized
 
+import cats.effect.Concurrent
+import cats.effect.Resource
 import cats.effect.std.AtomicCell
-import cats.effect.{Concurrent, Resource}
-import cats.syntax.all.*
+import cats.syntax.all._
 
 object ResourceSharedMemoized {
 
