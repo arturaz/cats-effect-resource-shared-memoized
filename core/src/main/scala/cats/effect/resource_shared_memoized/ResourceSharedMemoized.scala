@@ -1,9 +1,8 @@
 package cats.effect.resource_shared_memoized
 
-import cats.effect.{Concurrent, Resource}
 import cats.effect.std.AtomicCell
+import cats.effect.{Concurrent, Resource}
 import cats.syntax.all.*
-import cats.effect.syntax.all.*
 
 object ResourceSharedMemoized {
 
@@ -11,7 +10,7 @@ object ResourceSharedMemoized {
     * times. It keeps track of how many users it has and releases the [[Resource]] when there are no more users.
     */
   def memoize[F[_]: Concurrent, A](resource: Resource[F, A]): F[Resource[F, A]] = {
-    def allocate(cell: AtomicCell[F, Option[Allocated[F, A]]]) = cell.evalModify {
+    def acquire(cell: AtomicCell[F, Option[Allocated[F, A]]]) = cell.evalModify {
       case None =>
         // Allocate the resource.
         (for {
@@ -23,7 +22,7 @@ object ResourceSharedMemoized {
       case Some(data) =>
         // Register that we have a user.
         (data.addUser.some, data.value).pure
-    }.uncancelable
+    }
 
     def cleanup(cell: AtomicCell[F, Option[Allocated[F, A]]], a: A) = cell.evalUpdate {
       case None =>
@@ -36,11 +35,11 @@ object ResourceSharedMemoized {
           case Some(data) => data.some.pure
           case None       => data.cleanup.as(None)
         }
-    }.uncancelable
+    }
 
     for {
       cell <- AtomicCell[F].of(Option.empty[Allocated[F, A]])
-    } yield Resource.make(allocate(cell))(cleanup(cell, _))
+    } yield Resource.make[F, A](acquire(cell))(cleanup(cell, _))
   }
 
   /** An allocated value. */
@@ -53,6 +52,7 @@ object ResourceSharedMemoized {
       if (users == 1) None else Some(copy(users = users - 1))
   }
   private object Allocated {
-    def make[F[_], A](value: A, cleanup: F[Unit]): Allocated[F, A] = apply(users = 1, value, cleanup)
+    def make[F[_], A](value: A, cleanup: F[Unit]): Allocated[F, A] =
+      apply(users = 1, value, cleanup)
   }
 }

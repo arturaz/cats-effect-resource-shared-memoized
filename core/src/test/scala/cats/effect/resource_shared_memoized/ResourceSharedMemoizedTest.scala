@@ -16,7 +16,7 @@
 
 package cats.effect.resource_shared_memoized
 
-import cats.effect.{IO, Resource, SyncIO}
+import cats.effect.{IO, Resource}
 import munit.CatsEffectSuite
 
 import java.util.concurrent.atomic.AtomicInteger
