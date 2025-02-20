@@ -16,12 +16,8 @@ object ResourceSharedMemoized {
       case None =>
         // Allocate the resource.
         (for {
-          /** Use `poll` to allow the resource allocation to be cancellable, for example in case `resource` is trying to
-            * get a lock and can't acquire it.
-            *
-            * @see
-            *   [[cats.effect.MonadCancel]]
-            */
+          // Use `poll` to allow the resource allocation to be cancellable, for example in case `resource` is trying to
+          // get a lock and can't acquire it.
           tpl <- poll(resource.allocated)
           (a, cleanup) = tpl
         } yield {
