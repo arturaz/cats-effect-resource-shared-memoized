@@ -32,10 +32,12 @@ class MyTests extends munit.CatsEffectSuite {
 
   dbFixture.test("test 1") { db =>
     // The `db` object here is shared with...
+    val _ = db // pretend that we use db
   }
 
   dbFixture.test("test 2") { db =>
     // The `db` object here. 
+    val _ = db // pretend that we use db
   }
 }
 ```
