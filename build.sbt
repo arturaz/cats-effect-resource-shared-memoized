@@ -1,3 +1,5 @@
+import com.typesafe.tools.mima.core._
+
 // https://typelevel.org/sbt-typelevel/faq.html#what-is-a-base-version-anyway
 ThisBuild / tlBaseVersion := "0.1" // your current series x.y
 
@@ -46,7 +48,12 @@ lazy val core = crossProject(
       // 0.5. We will update once cats-effect has a build for scala-native 0.5.
       "org.typelevel" %%% "cats-core" % "2.11.0",
       "org.typelevel" %%% "cats-effect" % "3.5.7"
-    ) ++ MUnit.value.map(_ % Test)
+    ) ++ MUnit.value.map(_ % Test),
+    mimaBinaryIssueFilters ++= Seq(
+      // This class is private, but somehow MIMA still checks it :/
+      ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated"),
+      ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated.*")
+    )
   )
 
 lazy val docs = project
