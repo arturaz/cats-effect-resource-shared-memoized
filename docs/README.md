@@ -7,7 +7,43 @@ using it.
 
 ## Motivation
 
-> Can't we just use `.memoize`?
+The main use-case for developing this was sharing resources like database connections between test suites.
+
+For example:
+```scala mdoc
+import cats.effect.*
+import cats.effect.resource_shared_memoized.*
+import cats.effect.syntax.all.*
+import cats.effect.unsafe.implicits.global
+
+// A fake database connection
+class DatabaseConnection extends AutoCloseable {
+  override def close() = {} 
+}
+
+object MySuite {
+  val database = ResourceSharedMemoized.memoize(
+    Resource.fromAutoCloseable(IO(new DatabaseConnection))
+  ).unsafeRunSync()
+}
+
+class MyTests extends munit.CatsEffectSuite {
+  val dbFixture = ResourceFunFixture(MySuite.database)
+
+  dbFixture.test("test 1") { db =>
+    // The `db` object here is shared with...
+  }
+
+  dbFixture.test("test 2") { db =>
+    // The `db` object here. 
+  }
+}
+```
+
+This allows you to run one test case, a suite of tests, or all tests and not have to worry about acquiring or releasing 
+the database connection.
+
+### Can't we just use `.memoize`?
 
 Unfortunately no. `memoize` returns `Resource[F, Resource[F, A]]`, and we need `Resource[F, A]`. If we use
 `.allocated` on the outer resource then we need to perform the cleanup ourselves, which `ResourceSharedMemoized`
@@ -15,10 +51,6 @@ handles for you.
 
 Take a look at this example:
 ```scala mdoc
-import cats.effect.*
-import cats.effect.syntax.all.*
-import cats.effect.unsafe.implicits.global
-
 case class State(acquires: Int, releases: Int, users: Int) {
   def acquire = copy(acquires = acquires + 1, users = users + 1)
 
@@ -62,6 +94,13 @@ We want to use the `Resource[F, A]` transparently, without caring about managing
 
 ## Usage
 
+There is a single function `ResourceSharedMemoized.memoize` that takes a `Resource[F, A]` and returns `Resource[F, A]`.
+
+An `.memoizeShared` extension method is also provided for `Resource[F, A]` in the 
+`cats.effect.resource_shared_memoized.ResourceSharedMemoizedOps` implicit class.
+
+The example below demonstrates on how the library works:
+
 ```scala mdoc
 import cats.effect.resource_shared_memoized.*
 
@@ -71,7 +110,7 @@ val (cachedResource, state) = (for {
     val newState = s.acquire
     (newState, newState)
   })(_ => state.update(_.release))
-  resource <- ResourceSharedMemoized.memoize(resource)
+  resource <- resource.memoizeShared
 } yield (resource, state)).unsafeRunSync()
 
 cachedResource.use { value =>

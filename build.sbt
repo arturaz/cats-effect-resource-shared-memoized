@@ -24,6 +24,13 @@ ThisBuild / scalaVersion := Scala213 // the default Scala
 
 lazy val root = tlCrossRootProject.aggregate(core)
 
+val MUnit = Def.setting(
+  Seq(
+    "org.scalameta" %%% "munit" % "1.1.0",
+    "org.typelevel" %%% "munit-cats-effect" % "2.0.0"
+  )
+)
+
 lazy val core = crossProject(
   JVMPlatform,
   JSPlatform
@@ -41,9 +48,14 @@ lazy val core = crossProject(
       "org.scalameta" %%% "munit" % "1.1.0" % Test,
       "org.typelevel" %%% "munit-cats-effect" % "2.0.0" % Test
     )
+      "org.typelevel" %%% "cats-effect" % "3.5.7"
+    ) ++ MUnit.value.map(_ % Test)
   )
 
 lazy val docs = project
   .in(file("site"))
   .dependsOn(core.jvm)
   .enablePlugins(TypelevelSitePlugin)
+  .settings(
+    libraryDependencies ++= MUnit.value
+  )
