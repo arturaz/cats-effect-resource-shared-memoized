@@ -26,28 +26,25 @@ lazy val root = tlCrossRootProject.aggregate(core)
 
 val MUnit = Def.setting(
   Seq(
-    "org.scalameta" %%% "munit" % "1.1.0",
+    // MUnit supports only scala-native 0.5 from version 1.0.1 and upwards.
+    "org.scalameta" %%% "munit" % "1.0.0",
     "org.typelevel" %%% "munit-cats-effect" % "2.0.0"
   )
 )
 
 lazy val core = crossProject(
   JVMPlatform,
-  JSPlatform
-  // Seems we can't build native for now, as cats-core is only available for scala-native 0.5, but cats-effect is only
-  // available for scala-native 0.4 for now.
-//  NativePlatform
+  JSPlatform,
+  NativePlatform
 )
   .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(
     name := "cats-effect-resource-shared-memoized",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-core" % "2.13.0",
-      "org.typelevel" %%% "cats-effect" % "3.5.7",
-      "org.scalameta" %%% "munit" % "1.1.0" % Test,
-      "org.typelevel" %%% "munit-cats-effect" % "2.0.0" % Test
-    )
+      // Not the latest version, as we are targeting scala-native 0.4 for now and later versions of cats-core target
+      // 0.5. We will update once cats-effect has a build for scala-native 0.5.
+      "org.typelevel" %%% "cats-core" % "2.11.0",
       "org.typelevel" %%% "cats-effect" % "3.5.7"
     ) ++ MUnit.value.map(_ % Test)
   )
