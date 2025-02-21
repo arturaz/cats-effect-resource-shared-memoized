@@ -156,14 +156,14 @@
 </span><span class="comment">// memoizedResource: Resource[IO, State] = Eval(
 //   fa = FlatMap(
 //     ioe = Delay(
-//       thunk = cats.effect.kernel.SyncRef$$Lambda$12144/0x000000010334f040@7ea476f8,
+//       thunk = cats.effect.kernel.SyncRef$$Lambda$12022/0x0000000103328c40@58106be9,
 //       event = cats.effect.tracing.TracingEvent$StackTrace
 //     ),
-//     f = cats.effect.kernel.GenConcurrent$$Lambda$12145/0x000000010334f840@4bb686eb,
+//     f = cats.effect.kernel.GenConcurrent$$Lambda$12023/0x000000010332a040@490dd8c8,
 //     event = cats.effect.tracing.TracingEvent$StackTrace
 //   )
 // )
-// memoizedResourceState: Ref[IO, State] = cats.effect.kernel.SyncRef@42102e06
+// memoizedResourceState: Ref[IO, State] = cats.effect.kernel.SyncRef@2a530d36
 </span><span>
 </span><span class="identifier">memoizedResource</span><span>.</span><span class="identifier">use</span><span> { </span><span class="identifier">value</span><span> =&gt;
   </span><span class="identifier">memoizedResourceState</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">state</span><span> =&gt; </span><span class="string-literal">s&quot;</span><span class="escape-sequence">\n</span><span class="string-literal">state: </span><span class="substitution">$state</span><span class="escape-sequence">\n</span><span class="string-literal">value: </span><span class="substitution">$value</span><span class="string-literal">&quot;</span><span>)
@@ -213,9 +213,9 @@
   </span><span class="identifier">resource</span><span> &lt;- </span><span class="identifier">resource</span><span>.</span><span class="identifier">memoizeShared</span><span>
 } </span><span class="keyword">yield</span><span> (</span><span class="identifier">resource</span><span>, </span><span class="identifier">state</span><span>)).</span><span class="identifier">unsafeRunSync</span><span>()
 </span><span class="comment">// cachedResource: Resource[[A]IO[A], State] = Allocate(
-//   resource = cats.effect.kernel.Resource$$$Lambda$12137/0x000000010334a040@24616c02
+//   resource = cats.effect.kernel.Resource$$$Lambda$12015/0x0000000103324840@4ed7fe85
 // )
-// state: Ref[IO, State] = cats.effect.kernel.SyncRef@4d27d1c
+// state: Ref[IO, State] = cats.effect.kernel.SyncRef@7bdb501e
 </span><span>
 </span><span class="identifier">cachedResource</span><span>.</span><span class="identifier">use</span><span> { </span><span class="identifier">value</span><span> =&gt;
   </span><span class="identifier">state</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">state</span><span> =&gt; </span><span class="string-literal">s&quot;</span><span class="escape-sequence">\n</span><span class="string-literal">state: </span><span class="substitution">$state</span><span class="escape-sequence">\n</span><span class="string-literal">value: </span><span class="substitution">$value</span><span class="string-literal">&quot;</span><span>)
