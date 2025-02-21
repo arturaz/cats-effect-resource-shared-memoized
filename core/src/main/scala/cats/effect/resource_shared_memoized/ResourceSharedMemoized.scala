@@ -1,10 +1,8 @@
 package cats.effect.resource_shared_memoized
 
-import cats.effect.Concurrent
-import cats.effect.Poll
-import cats.effect.Resource
 import cats.effect.std.AtomicCell
-import cats.syntax.all._
+import cats.effect.{Concurrent, Poll, Resource}
+import cats.syntax.all.*
 
 object ResourceSharedMemoized {
 
@@ -18,10 +16,10 @@ object ResourceSharedMemoized {
         (for {
           // Use `poll` to allow the resource allocation to be cancellable, for example in case `resource` is trying to
           // get a lock and can't acquire it.
-          tpl <- poll(resource.allocated)
+          tpl <- poll(resource.allocatedCase)
           (a, cleanup) = tpl
         } yield {
-          val data = ResourceSharedMemoized.Allocated.make(value = a, cleanup = cleanup)
+          val data = ResourceSharedMemoized.Allocated(users = 1, value = a, cleanup = cleanup)
           (data.some, a)
         })
       case Some(data) =>
@@ -29,7 +27,7 @@ object ResourceSharedMemoized {
         (data.addUser.some, data.value).pure
     }
 
-    def cleanup(cell: AtomicCell[F, Option[Allocated[F, A]]], a: A) = cell.evalUpdate {
+    def cleanup(cell: AtomicCell[F, Option[Allocated[F, A]]], a: A, exitCase: Resource.ExitCase) = cell.evalUpdate {
       case None =>
         // This should never happen.
         Concurrent[F].raiseError(
@@ -38,26 +36,22 @@ object ResourceSharedMemoized {
       case Some(data) =>
         data.removeUser match {
           case Some(data) => data.some.pure
-          case None       => data.cleanup.as(None)
+          case None       => data.cleanup(exitCase).as(None)
         }
     }
 
     for {
       cell <- AtomicCell[F].of(Option.empty[Allocated[F, A]])
-    } yield Resource.makeFull[F, A](acquire(_, cell))(cleanup(cell, _))
+    } yield Resource.makeCaseFull[F, A](acquire(_, cell))(cleanup(cell, _, _))
   }
 
   /** An allocated value. */
-  private case class Allocated[F[_], A](users: Long, value: A, cleanup: F[Unit]) {
+  private case class Allocated[F[_], A](users: Long, value: A, cleanup: Resource.ExitCase => F[Unit]) {
     assert(users > 0, s"users must be > 0, but was $users for $value")
 
     def addUser: Allocated[F, A] = copy(users = users + 1)
 
     def removeUser: Option[Allocated[F, A]] =
       if (users == 1) None else Some(copy(users = users - 1))
-  }
-  private object Allocated {
-    def make[F[_], A](value: A, cleanup: F[Unit]): Allocated[F, A] =
-      apply(users = 1, value, cleanup)
   }
 }
