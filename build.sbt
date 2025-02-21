@@ -49,6 +49,10 @@ lazy val core = crossProject(
       "org.typelevel" %%% "cats-core" % "2.11.0",
       "org.typelevel" %%% "cats-effect" % "3.5.7"
     ) ++ MUnit.value.map(_ % Test),
+    // Do not fail on no previous artifacts, as we don't have scala-native published yet.
+    mimaPreviousArtifacts := {
+      if (crossProjectPlatform.value == NativePlatform) Set.empty else mimaPreviousArtifacts.value
+    },
     mimaBinaryIssueFilters ++= Seq(
       // This class is private, but somehow MIMA still checks it :/
       ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated"),
