@@ -57,6 +57,10 @@ lazy val core = crossProject(
       // This class is private, but somehow MIMA still checks it :/
       ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated"),
       ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated.*")
+    ),
+    addCommandAlias(
+      "prepareCi",
+      "scalafmtAll;scalafmtSbt;scalafixAll;test;docs/tlSite;mimaReportBinaryIssues"
     )
   )
 
