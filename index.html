@@ -81,7 +81,8 @@
   <ul class="nav-list">
     <li class="level1 nav-node"><a href="#motivation">Motivation</a></li>
     <li class="level2 nav-leaf"><a href="#can-t-we-just-use-memoize">Can&#39;t we just use <code>.memoize</code>?</a></li>
-    <li class="level1 nav-leaf"><a href="#usage">Usage</a></li>
+    <li class="level1 nav-node"><a href="#usage">Usage</a></li>
+    <li class="level2 nav-leaf"><a href="#delayed-release">Delayed release</a></li>
     <li class="level1 nav-leaf"><a href="#installation">Installation</a></li>
     <li class="level1 nav-leaf"><a href="#credits">Credits</a></li>
   </ul>
@@ -156,14 +157,14 @@
 </span><span class="comment">// memoizedResource: Resource[IO, State] = Eval(
 //   fa = FlatMap(
 //     ioe = Delay(
-//       thunk = cats.effect.kernel.SyncRef$$Lambda$11998/0x0000000103308040@6e43352e,
+//       thunk = cats.effect.kernel.SyncRef$$Lambda$11374/0x0000000102fbf040@193223ec,
 //       event = cats.effect.tracing.TracingEvent$StackTrace
 //     ),
-//     f = cats.effect.kernel.GenConcurrent$$Lambda$11999/0x0000000103308840@2a387979,
+//     f = cats.effect.kernel.GenConcurrent$$Lambda$11375/0x0000000102fbf840@2ac45426,
 //     event = cats.effect.tracing.TracingEvent$StackTrace
 //   )
 // )
-// memoizedResourceState: Ref[IO, State] = cats.effect.kernel.SyncRef@7e8f3e28
+// memoizedResourceState: Ref[IO, State] = cats.effect.kernel.SyncRef@7f43b4d8
 </span><span>
 </span><span class="identifier">memoizedResource</span><span>.</span><span class="identifier">use</span><span> { </span><span class="identifier">value</span><span> =&gt;
   </span><span class="identifier">memoizedResourceState</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">state</span><span> =&gt; </span><span class="string-literal">s&quot;</span><span class="escape-sequence">\n</span><span class="string-literal">state: </span><span class="substitution">$state</span><span class="escape-sequence">\n</span><span class="string-literal">value: </span><span class="substitution">$value</span><span class="string-literal">&quot;</span><span>)
@@ -213,9 +214,9 @@
   </span><span class="identifier">resource</span><span> &lt;- </span><span class="identifier">resource</span><span>.</span><span class="identifier">memoizeShared</span><span>
 } </span><span class="keyword">yield</span><span> (</span><span class="identifier">resource</span><span>, </span><span class="identifier">state</span><span>)).</span><span class="identifier">unsafeRunSync</span><span>()
 </span><span class="comment">// cachedResource: Resource[[A]IO[A], State] = Allocate(
-//   resource = cats.effect.kernel.Resource$$$Lambda$11991/0x0000000103303040@11b6efbe
+//   resource = cats.effect.kernel.Resource$$$Lambda$11367/0x0000000102fba040@6b615da3
 // )
-// state: Ref[IO, State] = cats.effect.kernel.SyncRef@715f24c4
+// state: Ref[IO, State] = cats.effect.kernel.SyncRef@2788b395
 </span><span>
 </span><span class="identifier">cachedResource</span><span>.</span><span class="identifier">use</span><span> { </span><span class="identifier">value</span><span> =&gt;
   </span><span class="identifier">state</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">state</span><span> =&gt; </span><span class="string-literal">s&quot;</span><span class="escape-sequence">\n</span><span class="string-literal">state: </span><span class="substitution">$state</span><span class="escape-sequence">\n</span><span class="string-literal">value: </span><span class="substitution">$value</span><span class="string-literal">&quot;</span><span>)
@@ -248,6 +249,21 @@
 </span><span class="identifier">state</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">unsafeRunSync</span><span>()
 </span><span class="comment">// res7: State = State(acquires = 2, releases = 2, users = 0)</span></code></pre>
         
+        <h3 id="delayed-release" class="section"><a class="anchor-link left" href="#delayed-release"><i class="icofont-laika link">&#xef71;</i></a>Delayed release</h3>
+        <p>Sometimes it is useful to wait a specified duration before releasing the underlying resource after the last user stops
+        using the memoized resource. For example, in tests, if your test framework runs tests sequentially, you do not want to
+        release the database connection after each test, only to reacquire it for the next one.</p>
+        <p>You can do that with:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">concurrent</span><span>.</span><span class="identifier">duration</span><span>.*
+
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">createWithDelayedRelease</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">r</span><span>: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">A</span><span>]) = 
+  </span><span class="type-name">ResourceSharedMemoized</span><span>.</span><span class="identifier">memoizeWithDelayedRelease</span><span>(</span><span class="identifier">r</span><span>, </span><span class="number-literal">500</span><span>.</span><span class="identifier">millis</span><span>)
+  
+</span><span class="comment">// or using the extension method
+</span><span class="keyword">def</span><span> </span><span class="declaration-name">createWithDelayedRelease2</span><span>[</span><span class="type-name">A</span><span>](</span><span class="identifier">r</span><span>: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">IO</span><span>, </span><span class="type-name">A</span><span>]) = 
+  </span><span class="identifier">r</span><span>.</span><span class="identifier">memoizeSharedWithDelayedRelease</span><span>(</span><span class="number-literal">500</span><span>.</span><span class="identifier">millis</span><span>)</span></code></pre>
+        <p>The underlying resource will be released after last user stops using it and the specified timeout passes.</p>
+        
         <h2 id="installation" class="section"><a class="anchor-link left" href="#installation"><i class="icofont-laika link">&#xef71;</i></a>Installation</h2>
         <p>Add the following to your <code>build.sbt</code>:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">libraryDependencies</span><span> += 
@@ -259,7 +275,7 @@
         <p>The code from <code>main</code> branch can be obtained with:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="identifier">resolvers</span><span> ++= </span><span class="type-name">Resolver</span><span>.</span><span class="identifier">sonatypeOssRepos</span><span>(</span><span class="string-literal">&quot;snapshots&quot;</span><span>)
 </span><span class="identifier">libraryDependencies</span><span> += 
-  </span><span class="string-literal">&quot;io.github.arturaz&quot;</span><span> %% </span><span class="string-literal">&quot;cats-effect-resource-shared-memoized&quot;</span><span> % </span><span class="string-literal">&quot;0.1.1-1-59c5fd9-SNAPSHOT&quot;</span></code></pre>
+  </span><span class="string-literal">&quot;io.github.arturaz&quot;</span><span> %% </span><span class="string-literal">&quot;cats-effect-resource-shared-memoized&quot;</span><span> % </span><span class="string-literal">&quot;0.1.1-2-a15854c-SNAPSHOT&quot;</span></code></pre>
         <p>For <a href="https://mill-build.com">mill</a>:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span>  </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">repositoriesTask</span><span> = </span><span class="type-name">T</span><span>.</span><span class="identifier">task</span><span> {
     </span><span class="keyword">super</span><span>.</span><span class="identifier">repositoriesTask</span><span>() ++ </span><span class="type-name">Seq</span><span>(
@@ -268,7 +284,7 @@
   }
 
 </span><span class="keyword">override</span><span> </span><span class="keyword">def</span><span> </span><span class="declaration-name">ivyDeps</span><span> = </span><span class="type-name">Agg</span><span>(
-  </span><span class="string-literal">ivy&quot;io.github.arturaz::cats-effect-resource-shared-memoized:0.1.1-1-59c5fd9-SNAPSHOT&quot;</span><span>
+  </span><span class="string-literal">ivy&quot;io.github.arturaz::cats-effect-resource-shared-memoized:0.1.1-2-a15854c-SNAPSHOT&quot;</span><span>
 )</span></code></pre>
         
         <h2 id="credits" class="section"><a class="anchor-link left" href="#credits"><i class="icofont-laika link">&#xef71;</i></a>Credits</h2>
