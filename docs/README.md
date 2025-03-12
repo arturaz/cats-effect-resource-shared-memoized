@@ -137,6 +137,26 @@ cachedResource.use { value1 =>
 state.get.unsafeRunSync()
 ```
 
+### Delayed release
+
+Sometimes it is useful to wait a specified duration before releasing the underlying resource after the last user stops
+using the memoized resource. For example, in tests, if your test framework runs tests sequentially, you do not want to
+release the database connection after each test, only to reacquire it for the next one.
+
+You can do that with:
+```scala mdoc
+import scala.concurrent.duration.*
+
+def createWithDelayedRelease[A](r: Resource[IO, A]) = 
+  ResourceSharedMemoized.memoizeWithDelayedRelease(r, 500.millis)
+  
+// or using the extension method
+def createWithDelayedRelease2[A](r: Resource[IO, A]) = 
+  r.memoizeSharedWithDelayedRelease(500.millis)  
+```
+
+The underlying resource will be released after last user stops using it and the specified timeout passes.
+
 ## Installation
 
 Add the following to your `build.sbt`:

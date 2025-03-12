@@ -27,7 +27,9 @@ import scala.concurrent.duration._
 
 class ResourceSharedMemoizedTest extends CatsEffectSuite {
   case class State(allocations: AtomicInteger, releases: AtomicInteger, resource: Resource[IO, Unit]) {
-    def memoized: IO[State] = resource.memoizeShared.map(r => copy(resource = r))
+    def memoized(releaseDelay: Option[FiniteDuration]): IO[State] = {
+      releaseDelay.fold(resource.memoizeShared)(resource.memoizeSharedWithDelayedRelease).map(r => copy(resource = r))
+    }
 
     def teardown: IO[Unit] = IO {
       val allocations = this.allocations.get()
@@ -45,22 +47,29 @@ class ResourceSharedMemoizedTest extends CatsEffectSuite {
     } yield apply(allocations, releases, resource)
   }
 
-  val fixture = FunFixture.async[State](
-    setup = { _ => State.make.flatMap(_.memoized).unsafeToFuture() },
+  def fixture(releaseDelay: Option[FiniteDuration]): FunFixture[State] = FunFixture.async[State](
+    setup = { _ => State.make.flatMap(_.memoized(releaseDelay)).unsafeToFuture() },
     teardown = _.teardown.unsafeToFuture()
   )
 
-  val cancellable = FunFixture.async[(State, Deferred[IO, Unit])](
-    setup = { _ =>
-      val io = for {
-        deferred <- Deferred[IO, Unit]
-        deferredResource = Resource.eval(deferred.get)
-        state <- State.make.map(state => state.copy(resource = deferredResource *> state.resource)).flatMap(_.memoized)
-      } yield (state, deferred)
-      io.unsafeToFuture()
-    },
-    teardown = _._1.teardown.unsafeToFuture()
-  )
+  val fixture: FunFixture[State] = fixture(None)
+
+  def cancellable(releaseDelay: Option[FiniteDuration]): FunFixture[(State, Deferred[IO, Unit])] =
+    FunFixture.async[(State, Deferred[IO, Unit])](
+      setup = { _ =>
+        val io = for {
+          deferred <- Deferred[IO, Unit]
+          deferredResource = Resource.eval(deferred.get)
+          state <- State.make
+            .map(state => state.copy(resource = deferredResource *> state.resource))
+            .flatMap(_.memoized(releaseDelay))
+        } yield (state, deferred)
+        io.unsafeToFuture()
+      },
+      teardown = _._1.teardown.unsafeToFuture()
+    )
+
+  val cancellable: FunFixture[(State, Deferred[IO, Unit])] = cancellable(None)
 
   fixture.test("it should only allocate once") { state =>
     state.resource.use { _ =>
@@ -105,4 +114,31 @@ class ResourceSharedMemoizedTest extends CatsEffectSuite {
       _ <- IO(assertEquals(state.releases.get(), 1))
     } yield ()
   }
+
+  fixture(Some(200.millis))
+    .test("keepAfterRelease: should wait before releasing after last user stops using it") { state =>
+      for {
+        _ <- state.resource.use(_ => IO.unit)
+        _ <- IO.sleep(100.millis)
+        _ <- state.resource.use(_ => IO.unit)
+        _ <- IO(assertEquals(state.releases.get(), 0))
+        _ <- IO.sleep(300.millis)
+        _ <- IO(assertEquals(state.allocations.get(), 1))
+        _ <- IO(assertEquals(state.releases.get(), 1))
+      } yield ()
+    }
+
+  fixture(Some(50.millis))
+    .test("keepAfterRelease: should not expire if someone is still using the resource") { state =>
+      for {
+        _ <- state.resource.use(_ => IO.unit)
+        _ <- state.resource.use(_ =>
+          IO.sleep(100.millis) *> IO(assertEquals(state.allocations.get(), 1)) *>
+            IO(assertEquals(state.releases.get(), 0))
+        )
+        _ <- IO.sleep(100.millis)
+        _ <- IO(assertEquals(state.allocations.get(), 1))
+        _ <- IO(assertEquals(state.releases.get(), 1))
+      } yield ()
+    }
 }

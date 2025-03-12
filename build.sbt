@@ -56,7 +56,12 @@ lazy val core = crossProject(
     mimaBinaryIssueFilters ++= Seq(
       // This class is private, but somehow MIMA still checks it :/
       ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated"),
-      ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated.*")
+      ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized#Allocated.*"),
+      ProblemFilters.exclude[Problem]("cats.effect.resource_shared_memoized.ResourceSharedMemoized$Allocated$")
+    ),
+    addCommandAlias(
+      "prepareCi",
+      "scalafmtAll;scalafmtSbt;scalafixAll;coreJVM/test;docs/tlSite;mimaReportBinaryIssues"
     )
   )
 
